@@ -531,9 +531,21 @@ end
 -- NPC Vendor ----------------------------------------------------------------
 
 function LibPrice.NPCPrice(item_link)
-  local o = { GetItemLinkInfo(item_link) }
-  if not (o and o[2] and 0 < o[2]) then return nil end
-  return { npcVendor = o[2] }
+  local _, value = GetItemLinkInfo(item_link)
+  local purchasePrice
+  if MasterMerchant and MasterMerchant["vendor_price_table"] then
+    local itemId = GetItemLinkItemId(itemLink)
+    local itemType = GetItemLinkItemType(itemLink)  
+    if MasterMerchant["vendor_price_table"][itemType] then
+      purchasePrice = MasterMerchant["vendor_price_table"][itemType][itemId]
+    end
+  end
+
+  if not (value ~= 0 or purchasePrice) then return nil end
+  return {
+    npcVendor     = value ~= 0 and value or nil,
+    purchasePrice = purchasePrice,
+  }
 end
 
 
