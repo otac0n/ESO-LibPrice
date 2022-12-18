@@ -1,9 +1,8 @@
 LibPrice = LibPrice or {}
 
--- How long of a date range to pass to Master Merchant
--- and Arkadius Trade Tools.
-LibPrice.day_ct_short = 3      -- ATT only
-LibPrice.day_ct_long = 90      -- MM and ATT
+-- How long of a date range to pass to Arkadius Trade Tools
+LibPrice.day_ct_short = 3
+LibPrice.day_ct_long = 90
 
 -- source keys
 LibPrice.MM = "mm"
@@ -532,16 +531,19 @@ end
 
 function LibPrice.GetCachedPrice(source_key, item_link)
   LibPrice.ResetCacheIfNecessary()
-  if not (LibPrice.cache
-    and LibPrice.cache[source_key]) then
+  if not (LibPrice.cache and LibPrice.cache[source_key]) then
     -- d("|cDDD666cache miss:"..item_link)
     return nil
   end
+  -- allow the MM cache to do its job
+  if source_key == LibPrice.MM then return nil end
   -- d("|c66DD66cache hit:"..item_link)
   return LibPrice.cache[source_key][item_link]
 end
 
 function LibPrice.SetCachedPrice(source_key, item_link, value)
+  -- allow the MM cache to do its job
+  if source_key == LibPrice.MM then return end
   LibPrice.cache = LibPrice.cache or {}
   LibPrice.cache[source_key] = LibPrice.cache[source_key] or {}
   LibPrice.cache[source_key][item_link] = value
