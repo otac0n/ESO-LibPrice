@@ -376,15 +376,14 @@ function LibPrice.CanNAHPrice()
 end
 
 function LibPrice.NAHPrice(item_link)
-  if not NirnAuctionHouse then return nil end
+  if not (NirnAuctionHouse and NirnAuctionHouse.PriceTable) then return nil end
   local itemId = NirnAuctionHouse:GetItemID(item_link)
   local quality = GetItemLinkQuality(item_link)
   local powerOrRating = GetItemLinkWeaponPower(item_link) + GetItemLinkArmorRating(item_link, false)
   local level = GetItemLinkRequiredLevel(item_link)
   local cp = GetItemLinkRequiredChampionPoints(item_link)
   local entry = NirnAuctionHouse.PriceTable[itemId .. ":" .. quality .. ":" .. powerOrRating .. ":" .. level .. ":" .. cp]
-  if not entry or entry.price == nil then return nil end
-  return { price = entry.price }
+  return entry
 end
 
 -- Crown Store ------------------------------------------------------ ziggr --
