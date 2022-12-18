@@ -45,9 +45,10 @@ end
 --      "att"
 --      "furc"
 --      "ttc"
+--      "nah"
 --
 -- Returns:
--- mm                   Master Merchant, by Philgo
+-- mm                   Master Merchant, by Khaibit, Philgo, Sharlikran
 --  avgPrice            https://www.esoui.com/downloads/info928-MasterMerchant.html
 --  numSales            see MasterMerchant:tooltipStats() for what these
 --  numDays             fields mean.
