@@ -20,6 +20,11 @@ LibPrice.CURRENCY_TYPE_WRIT_VOUCHERS = "vouchers"
 LibPrice.CURRENCY_TYPE_ALLIANCE_POINTS = "ap"
 LibPrice.CURRENCY_TYPE_CROWNS = "crowns"
 
+-- Price types
+LibPrice.PRICE_BID = 'bid'
+LibPrice.PRICE_ASK = 'ask'
+LibPrice.PRICE_SALE = 'sale'
+
 local function Info(msg, ...)
   d("|c999999LibPrice: " .. string.format(msg, ...))
 end
@@ -96,6 +101,26 @@ function LibPrice.Price(source_key, item_link)
   return got
 end
 
+function LibPrice.PriceNormalized(source_key, item_link)
+    local self = LibPrice
+    local got = self.Price(source_key, item_link)
+    if not got then return nil end
+    if not self.NORMALIZE then
+      self.NORMALIZE = {
+        [self.MM] = self.MMPriceNormalize
+      , [self.ATT] = self.ATTPriceNormalize
+      , [self.FURC] = self.FurCPriceNormalize
+      , [self.TTC] = self.TTCPriceNormalize
+      , [self.NAH  ] = self.NAHPriceNormalize
+      , [self.CROWN] = self.CrownPriceNormalize
+      , [self.ROLIS] = self.RolisPriceNormalize
+      , [self.NPC] = self.NPCPriceNormalize
+      }
+    end
+    if not self.NORMALIZE[source_key] then return nil end
+    return self.NORMALIZE[source_key](got)
+end
+
 -- If the caller requested a specific list of  sources,
 -- then return true only if key is in that list.
 --
@@ -123,6 +148,14 @@ function LibPrice.MMPrice(item_link)
     return nil
   end
   return mm
+end
+
+function LibPrice.MMPriceNormalize(mm)
+  if not mm then return nil end
+  local prices = {}
+  if mm.avgPrice ~= nil then table.insert(prices, { type = LibPrice.PRICE_SALE, [LibPrice.CURRENCY_TYPE_GOLD] = mm.avgPrice, count = mm.numSales, days = mm.numDays }) end
+  if mm.bonanzaCount then table.insert(prices, { type = LibPrice.PRICE_ASK, [LibPrice.CURRENCY_TYPE_GOLD] = mm.bonanzaPrice, count = mm.bonanzaCount }) end
+  return prices
 end
 
 -- Arkadius Trade Tools ----------------------- Arkadius, Verbalinkontinenz --
@@ -167,6 +200,12 @@ function LibPrice.ATTPrice(item_link)
   return nil
 end
 
+function LibPrice.ATTPriceNormalize(att)
+  if not att then return nil end
+  return {
+    { type = LibPrice.PRICE_SALE, [LibPrice.CURRENCY_TYPE_GOLD] = att.avgPrice, count = nil, days = att.numDays } -- TODO: Count.
+  }
+end
 
 -- Furniture Catalogue ----------------------------------------- Manavortex --
 
@@ -219,6 +258,12 @@ function LibPrice.FurCPrice(item_link)
   return o
 end
 
+function FurCPriceNormalize(furc)
+  if not furc then return nil end
+  return {
+    { type = LibPrice.PRICE_BID, [furc.currency_type] = furc.currency_ct, count = 1/0, days = 0 }
+  }
+end
 
 -- Looking for FURC_XXX recipe_array.version values?
 -- -- versioning
@@ -382,6 +427,14 @@ function LibPrice.TTCPrice(item_link)
   return TamrielTradeCentrePrice:GetPriceInfo(item_link)
 end
 
+function LibPrice.TTCPriceNormalize(ttc)
+  if not ttc then return nil end
+  local prices = {}
+  if ttc.Avg ~= nil then table.insert(prices, { type = LibPrice.PRICE_ASK, [LibPrice.CURRENCY_TYPE_GOLD] = ttc.Avg, count = ttc.EntryCount }) end
+  if ttc.SuggestedPrice ~= nil then table.insert(prices, { type = LibPrice.PRICE_SALE, [LibPrice.CURRENCY_TYPE_GOLD] = ttc.SuggestedPrice / 0.8, count = math.ceil(ttc.EntryCount * 0.3) }) end
+  return prices
+end
+
 -- Nirn Auction House ---------------------------------------------- otac0n --
 
 function LibPrice.CanNAHPrice()
@@ -397,6 +450,13 @@ function LibPrice.NAHPrice(item_link)
   local cp = GetItemLinkRequiredChampionPoints(item_link)
   local entry = NirnAuctionHouse.PriceTable[itemId .. ":" .. quality .. ":" .. powerOrRating .. ":" .. level .. ":" .. cp]
   return entry
+end
+
+function LibPrice.NAHPriceNormalize(nah)
+  if not nah then return nil end
+  local prices = {}
+  if nah.price ~= nil then table.insert(prices, { type = LibPrice.PRICE_BID, [LibPrice.CURRENCY_TYPE_GOLD] = nah.price }) end
+  return prices
 end
 
 -- Crown Store ------------------------------------------------------ ziggr --
@@ -449,6 +509,13 @@ function LibPrice.CrownPrice(item_link)
   return self.CASH[name]
 end
 
+function LibPrice.CrownPriceNormalize(cash)
+  if not cash then return nil end
+  return {
+    { type = LibPrice.PRICE_ASK, crowns = cash.crowns, count = 1/0, days = 0 }
+  }
+end
+
 
 -- Rolis Hlaalu, Master Crafter Merchant ---------------------------- ziggr --
 
@@ -479,6 +546,13 @@ function LibPrice.RolisPrice(item_link)
     result = self.ROLIS_PRICE[item_name]
   end
   return result
+end
+
+function LibPrice.RolisPriceNormalize(rolis)
+  if not rolis then return nil end
+  return {
+    { type = LibPrice.PRICE_ASK, [LibPrice.CURRENCY_TYPE_WRIT_VOUCHERS] = rolis.vouchers, count = 1/0, days = 0 }
+  }
 end
 
 function LibPrice.Unattune(item_link)
@@ -548,6 +622,13 @@ function LibPrice.NPCPrice(item_link)
   }
 end
 
+function LibPrice.NPCPriceNormalize(npc)
+  if not npc then return nil end
+  local prices = {}
+  if npc.npcVendor then table.insert(prices, { type = LibPrice.PRICE_BID, price = npc.npcVendor, count = 1/0, days = 0 }) end
+  if npc.purchasePrice then table.insert(prices, { type = LibPrice.PRICE_ASK, price = npc.purchasePrice, count = 1/0, days = 0 }) end
+  return prices
+end
 
 -- Cache ---------------------------------------------------------------------
 --
