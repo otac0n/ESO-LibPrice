@@ -14,6 +14,12 @@ LibPrice.CROWN = "crown"
 LibPrice.ROLIS = "rolis"
 LibPrice.NPC = "npc"
 
+-- Currencies
+LibPrice.CURRENCY_TYPE_GOLD = "gold"
+LibPrice.CURRENCY_TYPE_WRIT_VOUCHERS = "vouchers"
+LibPrice.CURRENCY_TYPE_ALLIANCE_POINTS = "ap"
+LibPrice.CURRENCY_TYPE_CROWNS = "crowns"
+
 local function Info(msg, ...)
   d("|c999999LibPrice: " .. string.format(msg, ...))
 end
@@ -37,6 +43,18 @@ function LibPrice.SourceList()
     }
   end
   return LibPrice.SOURCE_LIST
+end
+
+function LibPrice.CurrencyList()
+  if not LibPrice.CURRENCY_LIST then
+    LibPrice.CURRENCY_LIST = {
+      LibPrice.CURRENCY_TYPE_GOLD
+    , LibPrice.CURRENCY_TYPE_WRIT_VOUCHERS
+    , LibPrice.CURRENCY_TYPE_ALLIANCE_POINTS
+    , LibPrice.CURRENCY_TYPE_CROWNS
+    }
+  end
+  return LibPrice.CURRENCY_LIST
 end
 
 function LibPrice.Price(source_key, item_link)
@@ -200,11 +218,6 @@ function LibPrice.FurCPrice(item_link)
   }
   return o
 end
-
-LibPrice.CURRENCY_TYPE_GOLD = "gold"
-LibPrice.CURRENCY_TYPE_WRIT_VOUCHERS = "vouchers"
-LibPrice.CURRENCY_TYPE_ALLIANCE_POINTS = "ap"
-LibPrice.CURRENCY_TYPE_CROWNS = "crowns"
 
 
 -- Looking for FURC_XXX recipe_array.version values?
@@ -436,13 +449,13 @@ function LibPrice.CrownPrice(item_link)
   return self.CASH[name]
 end
 
+
+-- Rolis Hlaalu, Master Crafter Merchant ---------------------------- ziggr --
+
 LibPrice.LINK_ATTUNABLE_BS = "|H1:item:119594:364:50:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:10000:0|h|h"
 LibPrice.LINK_ATTUNABLE_CL = "|H1:item:119821:364:50:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:10000:0|h|h"
 LibPrice.LINK_ATTUNABLE_WW = "|H1:item:119822:364:50:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:10000:0|h|h"
 LibPrice.LINK_ATTUNABLE_JW = "|H1:item:137947:364:50:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:10000:0|h|h"
-
-
--- Rolis Hlaalu, Master Crafter Merchant ---------------------------- ziggr --
 
 function LibPrice.RolisPrice(item_link)
   if not item_link then return nil end
