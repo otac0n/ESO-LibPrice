@@ -36,10 +36,15 @@ function LibPrice_Example.SlashCommand()
         local header = self.FormatHeader(item_link, gold, source_key, field_name)
         d(header)
 
-                        -- Give me all the data you can find, I'll figure out
+                        -- Give me all the raw data you can find, I'll figure out
                         -- what to do with it later.
         local result = LibPrice.ItemLinkToPriceData(item_link)
         LibPrice_Example.DumpTable(result)
+
+                        -- Give me the best bid price vs the average sale price vs
+                        -- the lowest asking price.
+        local result = LibPrice.ItemLinkToBidAskSpread(item_link)
+        LibPrice_Example.DumpTable(result["gold"])
     end
 end
 ```

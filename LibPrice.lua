@@ -40,7 +40,7 @@ end
 --
 -- input:
 --  item_link
---  optional: list of sources to return:, any of:
+--  optional: list of sources to return. Any of the items in LibPrice.SourceList(), such as:
 --      "mm"
 --      "att"
 --      "furc"
@@ -113,3 +113,122 @@ function LibPrice.ItemLinkToPriceData(item_link, ...)
   return result
 end
 
+-- All the data renormalized into bid, ask, or sale prices, with additional details for fully generic processing.
+--
+-- input:
+--  item_link
+--  optional: list of sources to return. Any of the items in LibPrice.SourceList(), such as:
+--      "mm"
+--      "att"
+--      "furc"
+--      "ttc"
+--      "nah"
+--
+-- Returns:
+--  A table containing items with the following schema:
+--    {
+--
+--      type   = One of 'bid', 'ask', or 'sale'
+--
+--      One of:
+--      ['gold'] = the value in gold
+--      ['vouchers'] = the price in vouchers
+--      ['ap'] = the price in alliance points
+--      ['crowns'] = the price in crowns
+--          the keys are in LibPrice.CurrencyList()
+--
+--      count  = the number of listings that make up the price, use for weighted averages or checking if the value is significant
+--      days   = the max age of the data
+--      source = the source key of the data
+--    }
+--
+function LibPrice.ItemLinkToBidAskData(item_link, ...)
+  local self = LibPrice
+  local result = {}
+  -- If source list requested, then search only
+  -- the requested sources. If no source list requested,
+  -- search all sources.
+  local requested_source_list = { ... }
+  for _, source_key in ipairs(self.SourceList()) do
+    if self.Enabled(source_key, requested_source_list) then
+      local normalized = self.PriceNormalized(source_key, item_link)
+      if normalized then
+        for _, data in ipairs(normalized) do
+          data.source = source_key
+          table.insert(result, data)
+        end
+      end
+    end
+  end
+  return result
+end
+
+-- Coallates all price data into categories by currency and type, for full generic processing.
+--
+-- input:
+--  item_link
+--  optional: list of sources to use. Any of the items in LibPrice.SourceList(), such as:
+--      "mm"
+--      "att"
+--      "furc"
+--      "ttc"
+--      "nah"
+--
+-- Returns:
+--  An object with per-currency prices (given prices were found):
+--    {
+--      [CURRENCY] = {
+--        bid = { value = 2.04, count = 1 },
+--        sale = { value = 6.23, count = 160 },
+--        ask = { value = 12.26, count = 535 },
+--      }
+--    }
+--
+function LibPrice.ItemLinkToBidAskSpread(item_link, ...)
+  local data = LibPrice.ItemLinkToBidAskData(item_link, ...)
+  local result = {}
+  for _, price in ipairs(data) do
+    for _, currency in ipairs(LibPrice.CurrencyList()) do
+      if price[currency] ~= nil then
+        local record
+        if not result[currency] then
+          record = {}
+          result[currency] = record
+        else
+          record = result[currency]
+        end
+
+        local metric
+        if not record[price.type] then
+          metric = {}
+          record[price.type] = metric
+        else
+          metric = record[price.type]
+        end
+
+        local value = price[currency]
+        local count = price.count or 1
+        if price.type == 'sale' then
+          metric.sum = (metric.sum or 0) + (value * count)
+          metric.count = (metric.count or 0) + count
+        else
+          if not metric.value or (price.type == 'bid' and value > metric.value) or (price.type == 'ask' and value < metric.value) then
+            metric.value = value
+            metric.count = count
+          elseif metric.value == value then
+            metric.count = metric.count + count
+          end
+        end
+      end
+    end
+  end
+  for _, record in pairs(result) do
+    for t, metric in pairs(record) do
+      if t == 'sale' then
+        metric.value = metric.sum / metric.count
+        metric.sum = nil
+      end
+    end
+  end
+  return result
+end

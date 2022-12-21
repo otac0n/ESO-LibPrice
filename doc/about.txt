@@ -42,6 +42,11 @@ function LibPrice_Example.SlashCommand()
                         -- what to do with it later.
         local result = LibPrice.ItemLinkToPriceData(item_link)
         LibPrice_Example.DumpTable(result)
+
+                        -- Give me the best bid price vs the average sale price vs
+                        -- the lowest asking price.
+        local result = LibPrice.ItemLinkToBidAskSpread(item_link)
+        LibPrice_Example.DumpTable(result["gold"])
     end
 end
 [/highlight]
