@@ -178,9 +178,9 @@ end
 --  An object with per-currency prices (given prices were found):
 --    {
 --      [CURRENCY] = {
---        bid = { value = 2.04, count = 1 },
---        sale = { value = 6.23, count = 160 },
---        ask = { value = 12.26, count = 535 },
+--        bid = { value = 2.04, count = 1, sources = { [1] = "nah" } },
+--        sale = { value = 6.23, count = 160, sources = { [1] = "mm", [2] = "ttc" } },
+--        ask = { value = 12.26, count = 535, sources = { [1] = "mm", [2] = "ttc" } },
 --      }
 --    }
 --
@@ -188,7 +188,7 @@ function LibPrice.ItemLinkToBidAskSpread(item_link, ...)
   local data = LibPrice.ItemLinkToBidAskData(item_link, ...)
   local result = {}
   for _, price in ipairs(data) do
-    for _, currency in ipairs(LibPrice.CurrencyList()) do
+    for currency, _  in pairs(LibPrice.CurrencyList()) do
       if price[currency] ~= nil then
         local record
         if not result[currency] then
@@ -200,11 +200,12 @@ function LibPrice.ItemLinkToBidAskSpread(item_link, ...)
 
         local metric
         if not record[price.type] then
-          metric = {}
+          metric = { sources = {} }
           record[price.type] = metric
         else
           metric = record[price.type]
         end
+        metric.sources[price.source] = true
 
         local value = price[currency]
         local count = price.count or 1
@@ -224,6 +225,11 @@ function LibPrice.ItemLinkToBidAskSpread(item_link, ...)
   end
   for _, record in pairs(result) do
     for t, metric in pairs(record) do
+      local sources = {}
+      for source, _ in pairs(metric.sources) do
+        table.insert(sources, source)
+      end
+      metric.sources = sources
       if t == 'sale' then
         metric.value = metric.sum / metric.count
         metric.sum = nil
